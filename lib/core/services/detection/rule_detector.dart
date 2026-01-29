@@ -1,0 +1,141 @@
+import 'dart:math' as math;
+
+import '../../models/pothole_event.dart';
+import '../../models/processed_motion.dart';
+import '../../models/severity.dart';
+import '../../models/vehicle_type.dart';
+import '../../utils/signal_filters.dart';
+import '../location_service.dart';
+import '../sensor_service.dart';
+import 'detection_engine.dart';
+
+/// Mandatory, default detection engine (rule-based).
+///
+/// ## Orientation-independent signal
+/// This detector does **not** assume phone axes map to world axes.
+/// It computes an orientation-independent **vertical linear acceleration**
+/// signal by estimating gravity from the full accelerometer vector and
+/// projecting \((a - g)\) onto the gravity direction. This makes detection
+/// robust when the phone is rotated, tilted, or handheld.
+///
+/// ## Source of truth
+/// Rule-based detection is the **primary** decision-maker in the pipeline.
+/// Any optional ML component may only confirm/refine a *positive* rule trigger;
+/// it must not override a negative rule decision.
+///
+/// ## Gating / stability
+/// - **Speed gate**: if speed is known and < 5 km/h, ignore detections to
+///   reduce false positives when stationary/creeping.
+/// - **Cooldown**: enforce a minimum time between detections to prevent
+///   double-firing on a single bump.
+///
+/// Logic (hackathon-grade):
+/// - Compute orientation-independent vertical acceleration from full accel
+///   vector (gravity-aware).
+/// - High-pass filter the vertical signal to emphasize sharp bumps.
+/// - Detect sharp spikes via amplitude threshold.
+/// - Use different thresholds for bike vs car.
+/// - Ignore detection when speed is known and < 5 km/h.
+class RuleBasedDetector implements DetectionEngine {
+  final VehicleType vehicleType;
+
+  /// High-pass cutoff to remove slow components (gravity/tilt).
+  final double highPassCutoffHz;
+
+  /// Minimum time between detections (prevents double-firing).
+  final Duration cooldown;
+
+  final HighPassFilter _hp;
+  final VerticalAccelerationEstimator _vertical;
+  DateTime? _prevTimestamp;
+  DateTime? _lastDetection;
+
+  RuleBasedDetector({
+    this.vehicleType = VehicleType.car,
+    this.highPassCutoffHz = 1.0,
+    this.cooldown = const Duration(milliseconds: 900),
+  })  : _hp = HighPassFilter(cutoffHz: highPassCutoffHz),
+        _vertical = VerticalAccelerationEstimator();
+
+  @override
+  PotholeEvent? detect({
+    required MotionFrame motion,
+    LocationFix? location,
+  }) {
+    // Keep filter state up to date regardless of whether we "use" this frame.
+    final dtSeconds = _computeDtSeconds(motion.timestamp);
+    final ProcessedMotion processed = _vertical.process(
+      ax: motion.ax,
+      ay: motion.ay,
+      az: motion.az,
+      dtSeconds: dtSeconds,
+      timestamp: motion.timestamp,
+    );
+    final vHp = _hp.update(input: processed.verticalAccel, dtSeconds: dtSeconds);
+
+    // Ignore detection at very low speeds (if speed is known).
+    final speedMps = location?.speedMps;
+    if (speedMps != null) {
+      final speedKmh = speedMps * 3.6;
+      if (speedKmh < 5.0) return null;
+    }
+
+    // Cooldown to avoid multiple triggers from one bump.
+    if (_lastDetection != null &&
+        processed.timestamp.difference(_lastDetection!) < cooldown) {
+      return null;
+    }
+
+    final amplitude = vHp.abs();
+    final (lowT, medT, highT) = _thresholdsFor(vehicleType);
+
+    if (amplitude < lowT) return null;
+
+    final severity = amplitude >= highT
+        ? Severity.high
+        : amplitude >= medT
+            ? Severity.medium
+            : Severity.low;
+
+    // Map amplitude to a simple confidence score [0,1].
+    // Rule-based is authoritative; confidence can help downstream refinement.
+    final normalized = (amplitude - lowT) / math.max(0.0001, highT - lowT);
+    final confidence = (0.6 + 0.4 * normalized).clamp(0.0, 1.0);
+
+    _lastDetection = processed.timestamp;
+
+    return PotholeEvent(
+      detectedAt: processed.timestamp,
+      severity: severity,
+      confidence: confidence,
+      latitude: location?.latitude,
+      longitude: location?.longitude,
+    );
+  }
+
+  double _computeDtSeconds(DateTime now) {
+    final prev = _prevTimestamp;
+    _prevTimestamp = now;
+
+    if (prev == null) return 0.02; // assume ~50Hz first frame
+    final us = now.difference(prev).inMicroseconds;
+    if (us <= 0) return 0.02;
+    return us / 1e6;
+  }
+
+  /// Returns (low, medium, high) spike thresholds for high-pass vertical
+  /// amplitude.
+  ///
+  /// Units: m/s^2 (accelerometer).
+  (double, double, double) _thresholdsFor(VehicleType type) {
+    // These are intentionally simple starter values; tune later.
+    switch (type) {
+      case VehicleType.bike:
+        // Bikes feel sharper bumps; lower thresholds.
+        return (4.0, 6.0, 8.0);
+      case VehicleType.car:
+        return (6.0, 9.0, 12.0);
+    }
+  }
+}
+

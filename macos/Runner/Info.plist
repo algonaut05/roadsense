@@ -28,5 +28,9 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+
+	<!-- Location permission string required for runtime GPS access (geolocator). -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>RoadSense uses your location to tag detected potholes on the map.</string>
 </dict>
 </plist>
