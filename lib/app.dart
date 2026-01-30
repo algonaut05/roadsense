@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import 'core/services/firestore_upload_service.dart';
 import 'core/services/location_service.dart';
 import 'core/services/sensor_service.dart';
 import 'core/services/upload_service.dart';
@@ -23,7 +25,8 @@ class _RoadSenseAppState extends State<RoadSenseApp> {
     // Composition root: wire services + controller. No detection logic here.
     final sensorService = SensorsPlusSensorService();
     final locationService = GeolocatorLocationService();
-    final uploadService = DebugUploadService();
+    final uploadService =
+    FirestoreUploadService(FirebaseFirestore.instance);
 
     _controller = DetectionController(
       sensorService: sensorService,

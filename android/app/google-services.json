@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1094777996506",
+    "project_id": "roadsense-3e4b2",
+    "storage_bucket": "roadsense-3e4b2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1094777996506:android:7d84cc005f4a038f3191e3",
+        "android_client_info": {
+          "package_name": "com.example.roadsense"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAL7rNvG3EnpSc46mAz0w77YJbtHUO4JUs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
