@@ -10,9 +10,12 @@ import 'features/auth/login_landing_page.dart';
 import 'features/auth/municipality_login_screen.dart';
 import 'features/auth/splash_screen.dart';
 import 'features/detection/detection_controller.dart';
-import 'features/detection/detection_screen.dart';
+import 'features/detection/user_home_screen.dart';
+import 'features/dashboard/municipality_dashboard_screen.dart';
+import 'features/map/live_road_map_screen.dart';
+import 'features/map/route_comparison_screen.dart';
 
-enum AppScreen { splash, login, userMode, municipalityLogin }
+enum AppScreen { splash, login, userMode, municipalityLogin, municipalityDashboard, liveMap, routeComparison }
 
 class RoadSenseApp extends StatefulWidget {
   const RoadSenseApp({super.key});
@@ -83,6 +86,23 @@ class _RoadSenseAppState extends State<RoadSenseApp> {
     });
   }
 
+  void _navigateToMunicipalityDashboard() {
+    setState(() {
+      _currentScreen = AppScreen.municipalityDashboard;
+    });
+  }
+
+  void _navigateLiveMap() {
+    setState(() {
+      _currentScreen = AppScreen.liveMap;
+    });
+  }
+
+  void _navigateRouteComparison() {
+    setState(() {
+      _currentScreen = AppScreen.routeComparison;
+    });
+  }
 
   Widget _buildScreen() {
     switch (_currentScreen) {
@@ -94,25 +114,48 @@ class _RoadSenseAppState extends State<RoadSenseApp> {
           onUserLoginPressed: _navigateToUserMode,
           onMunicipalityLoginPressed: _navigateToMunicipalityLogin,
         );
-
       case AppScreen.userMode:
-        return DetectionScreen(controller: _detectionController);
+        return UserHomeScreen(controller: _detectionController);
 
       case AppScreen.municipalityLogin:
         return MunicipalityLoginScreen(
           authService: _authService,
           onLoginSuccess: () {
-            // TODO: Navigate to municipality dashboard after successful login
+            // Navigate to municipality dashboard after successful login
+            setState(() {
+              _currentScreen = AppScreen.municipalityDashboard;
+            });
+          },
+          onBackPressed: _backToLogin,
+        );
+
+      case AppScreen.municipalityDashboard:
+        return MunicipalityDashboardScreen(
+          authService: _authService,
+          onLogout: () {
+            // Navigate back to login after logout
             setState(() {
               _currentScreen = AppScreen.login;
             });
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Municipality dashboard coming soon!'),
-              ),
-            );
           },
-          onBackPressed: _backToLogin,
+        );
+
+      case AppScreen.liveMap:
+        return WillPopScope(
+          onWillPop: () async {
+            _navigateToUserMode();
+            return false;
+          },
+          child: const LiveRoadMapScreen(),
+        );
+
+      case AppScreen.routeComparison:
+        return WillPopScope(
+          onWillPop: () async {
+            _navigateToUserMode();
+            return false;
+          },
+          child: const RouteComparisonScreen(),
         );
     }
   }
