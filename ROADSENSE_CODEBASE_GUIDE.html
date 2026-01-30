@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoadSense Codebase - Beginner Friendly Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        h2 {
+            color: #2c3e50;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-left: 15px;
+            border-left: 4px solid #3498db;
+        }
+        
+        h3 {
+            color: #34495e;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        
+        table th {
+            background-color: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        table tr:hover {
+            background-color: #ecf0f1;
+        }
+        
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #c7254e;
+        }
+        
+        pre {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        pre code {
+            color: #ecf0f1;
+            background: none;
+            padding: 0;
+        }
+        
+        .intro-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .intro-box h2 {
+            color: white;
+            border-left-color: white;
+            margin-top: 0;
+        }
+        
+        .intro-box p {
+            margin-bottom: 10px;
+        }
+        
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        .architecture-box {
+            background-color: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+        
+        .flow-box {
+            background-color: #e8f5e9;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .security-box {
+            background-color: #fff3e0;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #f39c12;
+        }
+        
+        .folder-tree {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 15px 0;
+            line-height: 1.5;
+        }
+        
+        .emoji {
+            font-size: 1.2em;
+        }
+        
+        .page-break {
+            page-break-after: always;
+            margin: 40px 0;
+            border-top: 2px dashed #3498db;
+            padding-top: 20px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+            color: #7f8c8d;
+            font-size: 12px;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .container {
+                box-shadow: none;
+                padding: 20px;
+            }
+            
+            .page-break {
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">🛣️</span> RoadSense Codebase - Beginner Friendly Guide</h1>
+        
+        <div class="intro-box">
+            <h2>What is RoadSense?</h2>
+            <p><strong>RoadSense</strong> is a Flutter mobile app that detects potholes on roads using your phone's sensors (accelerometer). When potholes are detected, the app:</p>
+            <ol>
+                <li>Records the location (GPS)</li>
+                <li>Uploads the data to the cloud (Firebase)</li>
+                <li>Municipality admins can view and manage these reports</li>
+                <li>Track repairs and manage road maintenance</li>
+            </ol>
+        </div>
+
+        <h2><span class="emoji">🏗️</span> App Architecture (3 Main Parts)</h2>
+        <div class="architecture-box">
+            <pre>┌─────────────────────────────────────┐
+│   FLUTTER APP (Android/iOS/Web)     │  ← Users report potholes
+│   - Detection Mode                  │
+│   - Municipality Login              │
+│   - Dashboard                       │
+└──────────────┬──────────────────────┘
+               │ (HTTP calls)
+               ▼
+┌─────────────────────────────────────┐
+│  FIREBASE CLOUD (Google)            │  ← Stores data safely
+│  - Firestore Database               │
+│  - Cloud Functions                  │
+│  - Authentication                   │
+└─────────────────────────────────────┘</pre>
+        </div>
+
+        <h2><span class="emoji">📱</span> Main Technologies Used</h2>
+
+        <h3>1. Flutter (Front-End)</h3>
+        <p><strong>What:</strong> Cross-platform mobile framework (works on Android, iOS, Web)</p>
+        <p><strong>Language:</strong> Dart</p>
+        <p><strong>Why:</strong> Write once, run everywhere</p>
+        <p><strong>Files:</strong> <code>lib/</code> folder</p>
+
+        <h3>2. Firebase (Back-End)</h3>
+        <p><strong>What:</strong> Google's cloud platform for apps</p>
+        <p><strong>Components:</strong></p>
+        <ul>
+            <li><strong>Firestore:</strong> Database to store all data (like a spreadsheet in the cloud)</li>
+            <li><strong>Cloud Functions:</strong> Server code that runs on Google's servers</li>
+            <li><strong>Authentication:</strong> User login system</li>
+        </ul>
+
+        <h3>3. Node.js (Backend Server)</h3>
+        <p><strong>What:</strong> JavaScript runtime for backend</p>
+        <p><strong>Used for:</strong> Cloud Functions that handle login, verification</p>
+        <p><strong>Files:</strong> <code>backend/functions/</code> folder</p>
+
+        <h3>4. Key Libraries</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Library</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>sensors_plus</code></td>
+                    <td>Read phone accelerometer data (detects bumps)</td>
+                </tr>
+                <tr>
+                    <td><code>geolocator</code></td>
+                    <td>Get GPS location (latitude, longitude)</td>
+                </tr>
+                <tr>
+                    <td><code>cloud_firestore</code></td>
+                    <td>Connect to Firebase database</td>
+                </tr>
+                <tr>
+                    <td><code>firebase_core</code></td>
+                    <td>Initialize Firebase in app</td>
+                </tr>
+                <tr>
+                    <td><code>flutter_secure_storage</code></td>
+                    <td>Store passwords/tokens securely</td>
+                </tr>
+                <tr>
+                    <td><code>http</code></td>
+                    <td>Make network requests to backend</td>
+                </tr>
+                <tr>
+                    <td><code>google_maps_flutter</code></td>
+                    <td>Show map with pothole locations</td>
+                </tr>
+                <tr>
+                    <td><code>uuid</code></td>
+                    <td>Generate unique IDs for users</td>
+                </tr>
+                <tr>
+                    <td><code>shared_preferences</code></td>
+                    <td>Store simple data locally</td>
+                </tr>
+                <tr>
+                    <td><code>bcrypt</code></td>
+                    <td>Hash passwords (make them unreadable)</td>
+                </tr>
+                <tr>
+                    <td><code>jsonwebtoken</code></td>
+                    <td>Create secure login tokens</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="page-break"></div>
+
+        <h2><span class="emoji">📂</span> Folder Structure Explained</h2>
+        <div class="folder-tree">roadsense/
+├── lib/                          ← FLUTTER APP CODE
+│   ├── main.dart                 ← App entry point (starts the app)
+│   ├── app.dart                  ← Screen navigation
+│   ├── core/
+│   │   ├── models/               ← Data structures
+│   │   ├── services/             ← Business logic
+│   │   │   ├── municipality_auth_service.dart
+│   │   │   ├── firestore_upload_service.dart
+│   │   │   ├── device_id_service.dart
+│   │   │   └── detection/rule_detector.dart
+│   │   └── utils/
+│   └── features/                 ← UI Screens
+│       ├── auth/
+│       ├── detection/
+│       ├── map/
+│       └── settings/
+│
+├── backend/                      ← BACKEND CODE
+│   └── functions/
+│       ├── auth.js
+│       ├── package.json
+│       └── FIRESTORE_SCHEMA.js
+│
+├── android/                      ← Android specific
+├── ios/                          ← iOS specific
+├── web/                          ← Web version
+├── windows/                      ← Windows version
+│
+├── pubspec.yaml                  ← Flutter dependencies
+└── analysis_options.yaml         ← Code quality rules</div>
+
+        <h2><span class="emoji">🔄</span> How It Works (User Flow)</h2>
+
+        <h3>Flow 1: Regular User (Reports Potholes)</h3>
+        <div class="flow-box">
+            <pre>1. User opens app
+   ↓
+2. Phone sensors detect bumps in road
+   ↓
+3. App calculates confidence (0-100%)
+   ↓
+4. If confidence > 70%, mark as pothole
+   ↓
+5. Get GPS location (latitude, longitude)
+   ↓
+6. Upload to Firebase (with timestamp, user ID, location)
+   ↓
+7. Data saved in "detections" collection</pre>
+            <p><strong>Files involved:</strong></p>
+            <ul>
+                <li><code>rule_detector.dart</code> - Detects bumps using accelerometer data</li>
+                <li><code>firestore_upload_service.dart</code> - Uploads to database</li>
+                <li><code>device_id_service.dart</code> - Generates unique device ID</li>
+            </ul>
+        </div>
+
+        <h3>Flow 2: Municipality Admin (Manages Reports)</h3>
+        <div class="flow-box">
+            <pre>1. Admin opens app
+   ↓
+2. Clicks "Municipality Dashboard"
+   ↓
+3. Enters email + password
+   ↓
+4. App sends login request to Cloud Function
+   ↓
+5. Cloud Function checks password (bcrypt)
+   ↓
+6. If correct, generates JWT token (secure key)
+   ↓
+7. Token stored securely on phone
+   ↓
+8. Admin can now view all potholes in their city
+   ↓
+9. Can assign repairs, track status</pre>
+            <p><strong>Files involved:</strong></p>
+            <ul>
+                <li><code>municipality_login_screen.dart</code> - Login form</li>
+                <li><code>municipality_auth_service.dart</code> - Handles login logic</li>
+                <li><code>auth.js</code> - Backend login code</li>
+            </ul>
+        </div>
+
+        <div class="page-break"></div>
+
+        <h2><span class="emoji">📊</span> Data Flow (What Gets Stored)</h2>
+
+        <h3>Detection Report</h3>
+        <pre>{
+  detection_id: "uuid-123",
+  latitude: 40.7128,
+  longitude: -74.0060,
+  timestamp: "2026-01-30T10:30:00Z",
+  confidence: 85,
+  device_id: "user-device-123",
+  severity: 2,
+  status: "UNVERIFIED"
+}</pre>
+
+        <h3>Municipality User</h3>
+        <pre>{
+  id: "admin-123",
+  email: "admin@city.gov",
+  name: "John Doe",
+  password_hash: "$2b$10$...",  ← Encrypted, not readable
+  role: "MUNICIPAL_ADMIN",
+  municipality_id: "nyc-123",
+  active: true
+}</pre>
+
+        <h3>Municipality</h3>
+        <pre>{
+  id: "nyc-123",
+  name: "New York City",
+  code: "NYC",
+  contact_email: "contact@nyc.gov",
+  verified: true
+}</pre>
+
+        <h2><span class="emoji">🔐</span> Security Concepts</h2>
+
+        <h3>Password Hashing (Bcrypt)</h3>
+        <div class="security-box">
+            <pre>User enters:   "password123"
+                    ↓
+          Bcrypt hashing algorithm
+                    ↓
+Stored as:     "$2b$10$N9qo8uLOickgx2..."  ← Unreadable!</pre>
+            <p><strong>Why?</strong> Even if database is hacked, passwords are safe.</p>
+        </div>
+
+        <h3>JWT Token (for Login)</h3>
+        <div class="security-box">
+            <pre>User logs in successfully
+      ↓
+Server generates token: "eyJhbGciOiJIUzI1NiIs..."
+      ↓
+Stored on phone securely
+      ↓
+When making requests, send token to prove identity
+      ↓
+Token expires in 24 hours (for security)</pre>
+        </div>
+
+        <h3>Secure Storage</h3>
+        <div class="security-box">
+            <p><strong>Flutter SecureStorage</strong> = Encrypted storage on phone</p>
+            <ul>
+                <li>Passwords stored encrypted</li>
+                <li>Can't be read by other apps</li>
+                <li>Lost if user uninstalls app</li>
+            </ul>
+        </div>
+
+        <div class="page-break"></div>
+
+        <h2><span class="emoji">🎯</span> Key Algorithms Explained</h2>
+
+        <h3>1. Pothole Detection (rule_detector.dart)</h3>
+        <pre>Phone accelerometer constantly reads:
+  X, Y, Z axis acceleration
+      ↓
+Calculate total acceleration change
+      ↓
+Is it a sudden bump (> threshold)?
+      ↓
+How many bumps in 5 seconds?
+      ↓
+Calculate confidence score (0-100%)
+      ↓
+Confidence > 70%? → Report as pothole ✓</pre>
+        <p><strong>Example:</strong></p>
+        <ul>
+            <li>Normal driving: smooth acceleration = 0% confidence</li>
+            <li>Road bump: sudden spike = 85% confidence → REPORT!</li>
+        </ul>
+
+        <h3>2. Geohashing (ngeohash library)</h3>
+        <p>Converts GPS coordinates to grid:</p>
+        <pre>Latitude: 40.7128, Longitude: -74.0060
+         ↓
+    Geohash: "dr5regw"
+         ↓
+Easier to find nearby potholes
+(All potholes with similar geohash = same area)</pre>
+
+        <h2><span class="emoji">🔌</span> API Endpoints (Backend Functions)</h2>
+
+        <h3>Login Function</h3>
+        <pre>POST https://asia-south1-roadsense-3e4b2.cloudfunctions.net/municipalityLogin
+
+Input:
+{
+  "email": "admin@city.gov",
+  "password": "password123"
+}
+
+Output (if successful):
+{
+  "success": true,
+  "token": "eyJ...",
+  "user": {
+    "id": "123",
+    "email": "admin@city.gov",
+    "role": "MUNICIPAL_ADMIN"
+  }
+}
+
+Output (if failed):
+{
+  "success": false,
+  "message": "Invalid email or password"
+}</pre>
+
+        <h3>Verify Token Function</h3>
+        <pre>POST https://.../verifyToken
+
+Input:
+{
+  "token": "eyJ..."
+}
+
+Output:
+{
+  "valid": true,
+  "decoded": {
+    "userId": "123",
+    "expiresAt": 1675446400000
+  }
+}</pre>
+
+        <div class="page-break"></div>
+
+        <h2><span class="emoji">📦</span> Pubspec.yaml (Dependencies List)</h2>
+        <p>Think of it like a shopping list for the app:</p>
+        <pre>dependencies:
+  flutter:
+    sdk: flutter
+  
+  # Sensors
+  sensors_plus: ^1.4.0          ← Read accelerometer
+  geolocator: ^9.0.0            ← Get GPS location
+  
+  # Firebase
+  firebase_core: ^2.24.0        ← Connect to Firebase
+  cloud_firestore: ^4.13.0      ← Database
+  
+  # Security
+  flutter_secure_storage: ^9.0.0 ← Secure storage
+  
+  # Network
+  http: ^1.1.0                  ← Make HTTP requests
+  
+  # Maps
+  google_maps_flutter: ^2.5.0   ← Show map
+  
+  # Utilities
+  uuid: ^4.0.0                  ← Generate IDs
+  shared_preferences: ^2.2.0    ← Local storage</pre>
+
+        <h2><span class="emoji">🚀</span> How to Run the App</h2>
+        <pre># 1. Get dependencies
+flutter pub get
+
+# 2. Run on phone/emulator
+flutter run
+
+# OR build APK for distribution
+flutter build apk</pre>
+
+        <h2><span class="emoji">📱</span> App Screens (User Interface)</h2>
+        <pre>┌─────────────────────────────────┐
+│      Splash Screen (3s)         │  ← Loading animation
+│        🔄 Loading...            │
+└─────────────────────────────────┘
+              ↓
+┌─────────────────────────────────┐
+│    Login Landing Page           │
+│  [User Mode] [Municipality]     │  ← Choose role
+└─────────────────────────────────┘
+              ↓
+        (User chooses)
+        /            \
+       ↓              ↓
+  ┌──────────┐   ┌──────────────────┐
+  │  Home    │   │  Municipality    │
+  │  Screen  │   │  Login Screen    │
+  │ (detect) │   │ (email+password) │
+  └──────────┘   └──────────────────┘
+                        ↓
+                 ┌──────────────────┐
+                 │   Dashboard      │
+                 │  (view potholes) │
+                 └──────────────────┘</pre>
+
+        <h2><span class="emoji">🎓</span> Learning Path</h2>
+        <p>If you want to understand each part in order:</p>
+        <ol>
+            <li><strong>Start with:</strong> <code>lib/main.dart</code> - Entry point</li>
+            <li><strong>Then:</strong> <code>lib/app.dart</code> - Screen navigation</li>
+            <li><strong>Then:</strong> <code>lib/core/services/detection/rule_detector.dart</code> - Pothole detection logic</li>
+            <li><strong>Then:</strong> <code>lib/features/auth/municipality_login_screen.dart</code> - Login UI</li>
+            <li><strong>Then:</strong> <code>lib/core/services/municipality_auth_service.dart</code> - Login logic</li>
+            <li><strong>Finally:</strong> <code>backend/functions/auth.js</code> - Backend code</li>
+        </ol>
+
+        <h2><span class="emoji">💡</span> Key Takeaways</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Concept</th>
+                    <th>Explanation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Flutter</strong></td>
+                    <td>Mobile app framework (write once, run everywhere)</td>
+                </tr>
+                <tr>
+                    <td><strong>Firebase</strong></td>
+                    <td>Cloud database + server (no need to manage servers)</td>
+                </tr>
+                <tr>
+                    <td><strong>Sensors</strong></td>
+                    <td>Accelerometer detects bumps</td>
+                </tr>
+                <tr>
+                    <td><strong>GPS</strong></td>
+                    <td>Gets location of potholes</td>
+                </tr>
+                <tr>
+                    <td><strong>JWT Token</strong></td>
+                    <td>Secure login key (expires in 24 hours)</td>
+                </tr>
+                <tr>
+                    <td><strong>Bcrypt</strong></td>
+                    <td>Makes passwords unreadable</td>
+                </tr>
+                <tr>
+                    <td><strong>Cloud Functions</strong></td>
+                    <td>Server code that handles login</td>
+                </tr>
+                <tr>
+                    <td><strong>Firestore</strong></td>
+                    <td>Database that stores all data</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <p><strong>RoadSense Codebase Guide</strong></p>
+            <p>Generated: January 30, 2026</p>
+            <p>Document Version: 1.0</p>
+        </div>
+    </div>
+</body>
+</html>

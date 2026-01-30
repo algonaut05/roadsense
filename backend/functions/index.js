@@ -24,7 +24,15 @@ exports.aggregateDetection = onDocumentCreated(
     const data = snapshot.data();
 
     // 1. Calculate Geohash for the new detection
-    const geohash = ngeohash.encode(data.latitude, data.longitude, GEOHASH_PRECISION);
+    const latitude = data.latitude || data.lat;
+    const longitude = data.longitude || data.lng;
+    
+    if (!latitude || !longitude) {
+      console.error("Missing latitude/longitude in detection data");
+      return;
+    }
+
+    const geohash = ngeohash.encode(latitude, longitude, GEOHASH_PRECISION);
 
     // 2. Query for other detections in the same geohash cluster
     const db = getFirestore();
@@ -45,7 +53,9 @@ exports.aggregateDetection = onDocumentCreated(
     });
 
     // 3. Check for unique users
-    const uniqueUserIds = new Set(detections.map((d) => d.userId));
+    const uniqueUserIds = new Set(detections
+      .map((d) => d.userId)
+      .filter(id => id && id !== 'anonymous'));
 
     console.log(`Geohash ${geohash} has ${uniqueUserIds.size} unique user reports.`);
 
@@ -53,9 +63,15 @@ exports.aggregateDetection = onDocumentCreated(
     if (uniqueUserIds.size >= VERIFICATION_THRESHOLD) {
       console.log(`Verification threshold met for geohash ${geohash}. Aggregating...`);
 
-      const totalLatitude = detections.reduce((sum, d) => sum + d.latitude, 0);
-      const totalLongitude = detections.reduce((sum, d) => sum + d.longitude, 0);
-      const totalSeverity = detections.reduce((sum, d) => sum + d.severity, 0);
+      const totalLatitude = detections.reduce((sum, d) => sum + (d.latitude || d.lat || 0), 0);
+      const totalLongitude = detections.reduce((sum, d) => sum + (d.longitude || d.lng || 0), 0);
+      const totalSeverity = detections.reduce((sum, d) => {
+        const sev = d.severity;
+        const sevValue = typeof sev === 'string' ? 
+          (sev.toUpperCase() === 'HIGH' ? 3 : sev.toUpperCase() === 'MEDIUM' ? 2 : 1) : 
+          sev;
+        return sum + (sevValue || 0);
+      }, 0);
 
       const averageLatitude = totalLatitude / detections.length;
       const averageLongitude = totalLongitude / detections.length;

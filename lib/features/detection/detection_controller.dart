@@ -45,7 +45,9 @@ class DetectionController {
     required this.uploadService,
     DetectorMode initialMode = DetectorMode.ruleOnly,
   }) : _mode = initialMode {
-    _ruleEngine = RuleBasedDetector();
+    // Use minimalFiltering=true during initial testing so detections are more
+    // likely to fire while verifying upload -> Firestore flow.
+    _ruleEngine = RuleBasedDetector(debug: true, minimalFiltering: true);
     _mlEngine = MlBasedDetector(base: _ruleEngine);
   }
 

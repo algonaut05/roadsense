@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:developer' as dev;
 
 import '../../models/pothole_event.dart';
 import '../../models/processed_motion.dart';
@@ -49,13 +50,19 @@ class RuleBasedDetector implements DetectionEngine {
   final VerticalAccelerationEstimator _vertical;
   DateTime? _prevTimestamp;
   DateTime? _lastDetection;
+  final bool minimalFiltering;
 
   RuleBasedDetector({
     this.vehicleType = VehicleType.car,
     this.highPassCutoffHz = 1.0,
     this.cooldown = const Duration(milliseconds: 900),
+    this.debug = false,
+    this.minimalFiltering = false,
   })  : _hp = HighPassFilter(cutoffHz: highPassCutoffHz),
         _vertical = VerticalAccelerationEstimator();
+
+  /// When true, logs amplitudes, thresholds and confidence for debugging.
+  final bool debug;
 
   @override
   PotholeEvent? detect({
@@ -64,14 +71,28 @@ class RuleBasedDetector implements DetectionEngine {
   }) {
     // Keep filter state up to date regardless of whether we "use" this frame.
     final dtSeconds = _computeDtSeconds(motion.timestamp);
-    final ProcessedMotion processed = _vertical.process(
-      ax: motion.ax,
-      ay: motion.ay,
-      az: motion.az,
-      dtSeconds: dtSeconds,
-      timestamp: motion.timestamp,
-    );
-    final vHp = _hp.update(input: processed.verticalAccel, dtSeconds: dtSeconds);
+
+    double amplitude;
+
+    if (minimalFiltering) {
+      // Simple, device-agnostic magnitude-based linear accel estimate:
+      // amplitude = | sqrt(ax^2+ay^2+az^2) - g | . This avoids gravity estimator
+      // and high-pass filters so detection is very sensitive for testing.
+      const g = 9.81;
+      final rawMag = math.sqrt(motion.ax * motion.ax + motion.ay * motion.ay + motion.az * motion.az);
+      amplitude = (rawMag - g).abs();
+    } else {
+      // Normal pipeline: gravity-aware vertical accel + high-pass
+      final ProcessedMotion processed = _vertical.process(
+        ax: motion.ax,
+        ay: motion.ay,
+        az: motion.az,
+        dtSeconds: dtSeconds,
+        timestamp: motion.timestamp,
+      );
+      final vHp = _hp.update(input: processed.verticalAccel, dtSeconds: dtSeconds);
+      amplitude = vHp.abs();
+    }
 
     // Ignore detection at very low speeds (if speed is known).
     final speedMps = location?.speedMps;
@@ -80,14 +101,22 @@ class RuleBasedDetector implements DetectionEngine {
       if (speedKmh < 5.0) return null;
     }
 
+    // Use the current motion timestamp for event timing.
+    final eventTimestamp = motion.timestamp;
+
     // Cooldown to avoid multiple triggers from one bump.
-    if (_lastDetection != null &&
-        processed.timestamp.difference(_lastDetection!) < cooldown) {
+    if (_lastDetection != null && eventTimestamp.difference(_lastDetection!) < cooldown) {
       return null;
     }
 
-    final amplitude = vHp.abs();
     final (lowT, medT, highT) = _thresholdsFor(vehicleType);
+
+    if (debug) {
+      dev.log(
+        'DETECT: amp=${amplitude.toStringAsFixed(3)} thresholds=(${lowT.toStringAsFixed(2)},${medT.toStringAsFixed(2)},${highT.toStringAsFixed(2)})',
+        name: 'roadsense.detector',
+      );
+    }
 
     if (amplitude < lowT) return null;
 
@@ -102,10 +131,17 @@ class RuleBasedDetector implements DetectionEngine {
     final normalized = (amplitude - lowT) / math.max(0.0001, highT - lowT);
     final confidence = (0.6 + 0.4 * normalized).clamp(0.0, 1.0);
 
-    _lastDetection = processed.timestamp;
+    if (debug) {
+      dev.log(
+        'DETECT: severity=$severity confidence=${confidence.toStringAsFixed(3)}',
+        name: 'roadsense.detector',
+      );
+    }
+
+    _lastDetection = eventTimestamp;
 
     return PotholeEvent(
-      detectedAt: processed.timestamp,
+      detectedAt: eventTimestamp,
       severity: severity,
       confidence: confidence,
       latitude: location?.latitude,
@@ -128,13 +164,13 @@ class RuleBasedDetector implements DetectionEngine {
   ///
   /// Units: m/s^2 (accelerometer).
   (double, double, double) _thresholdsFor(VehicleType type) {
-    // These are intentionally simple starter values; tune later.
+    // Lowered thresholds; supports minimalFiltering mode.
     switch (type) {
       case VehicleType.bike:
         // Bikes feel sharper bumps; lower thresholds.
-        return (4.0, 6.0, 8.0);
+        return minimalFiltering ? (1.0, 2.0, 3.0) : (2.0, 4.0, 6.0);
       case VehicleType.car:
-        return (6.0, 9.0, 12.0);
+        return minimalFiltering ? (1.5, 3.0, 4.5) : (3.0, 6.0, 9.0);
     }
   }
 }
